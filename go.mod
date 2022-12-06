@@ -2,6 +2,8 @@ module github.com/taurusgroup/multi-party-sig
 
 go 1.14
 
+replace github.com/taurusgroup/multi-party-sig => ./
+
 require (
 	github.com/cronokirby/safenum v0.29.0
 	github.com/davecgh/go-spew v1.1.1 // indirect
