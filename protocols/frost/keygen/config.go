@@ -212,6 +212,22 @@ func (r *TaprootConfig) Derive(adjust *curve.Secp256k1Scalar, newChainKey []byte
 	}, nil
 }
 
+// DeriveTaproot adjusts the shares to turn a Taproot internal key into a Taproot output key.
+//
+// This derivation works acording to BIP-341, see:
+// https://github.com/bitcoin/bips/blob/master/bip-0341.mediawiki
+func (r *TaprootConfig) DeriveTaproot(merkleRoot []byte) (*TaprootConfig, error) {
+	adjustBytes := taproot.TaggedHash("TapTweak", r.PublicKey[:], merkleRoot)
+
+	var adjust curve.Secp256k1Scalar
+	err := adjust.UnmarshalBinary(adjustBytes)
+	if err != nil {
+		return nil, err
+	}
+
+	return r.Derive(&adjust, nil)
+}
+
 // DeriveChild adjusts the shares to represent the derived public key at a certain index.
 //
 // This derivation works according to BIP-32, see:
