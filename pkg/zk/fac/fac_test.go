@@ -1,4 +1,4 @@
-package zkprm
+package zkfac
 
 import (
 	"testing"
@@ -11,24 +11,23 @@ import (
 	"github.com/taurusgroup/multi-party-sig/pkg/pool"
 )
 
-func TestPrm(t *testing.T) {
+func TestFac(t *testing.T) {
 	pl := pool.NewPool(0)
 	defer pl.TearDown()
 
+	aux, _ := paillier.NewSecretKey(pl).GeneratePedersen()
 	sk := paillier.NewSecretKey(pl)
-	ped, lambda := sk.GeneratePedersen()
 
 	public := Public{
-		Aux: ped,
+		N:   sk.Modulus().Modulus,
+		Aux: aux,
 	}
 
 	proof := NewProof(Private{
-		Lambda: lambda,
-		Phi:    sk.Phi(),
-		P:      sk.P(),
-		Q:      sk.Q(),
-	}, hash.New(), public, pl)
-	assert.True(t, proof.Verify(public, hash.New(), pl))
+		P: sk.P(),
+		Q: sk.Q(),
+	}, hash.New(), public)
+	assert.True(t, proof.Verify(public, hash.New()))
 
 	out, err := cbor.Marshal(proof)
 	require.NoError(t, err, "failed to marshal proof")
@@ -39,31 +38,5 @@ func TestPrm(t *testing.T) {
 	proof3 := &Proof{}
 	require.NoError(t, cbor.Unmarshal(out2, proof3), "failed to unmarshal 2nd proof")
 
-	assert.True(t, proof3.Verify(public, hash.New(), pl))
-}
-
-var p *Proof
-
-func BenchmarkCRT(b *testing.B) {
-	b.StopTimer()
-	pl := pool.NewPool(0)
-	defer pl.TearDown()
-
-	sk := paillier.NewSecretKey(pl)
-	ped, lambda := sk.GeneratePedersen()
-
-	public := Public{
-		Aux: ped,
-	}
-
-	private := Private{
-		Lambda: lambda,
-		Phi:    sk.Phi(),
-		P:      sk.P(),
-		Q:      sk.Q(),
-	}
-	b.StartTimer()
-	for i := 0; i < b.N; i++ {
-		p = NewProof(private, hash.New(), public, nil)
-	}
+	assert.True(t, proof3.Verify(public, hash.New()))
 }
